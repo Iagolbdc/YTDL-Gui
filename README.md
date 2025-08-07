@@ -1,16 +1,62 @@
-# youtube_downloader
+# 🎵 YTDL Gui
 
-A new Flutter project.
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)](https://flutter.dev)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![AUR](https://img.shields.io/badge/AUR-available-orange.svg)](https://aur.archlinux.org/)
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+Um aplicativo desktop moderno e intuitivo para baixar vídeos e áudios do YouTube com qualidade ajustável. Desenvolvido em **Flutter**, funciona em **Windows, Linux e macOS**.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 🌟 Funcionalidades
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- ✅ Baixe vídeos em **MP4 (720p, 1080p, melhor disponível)**
+- ✅ Extraia áudio em **MP3 (320kbps ou 192kbps)**
+- ✅ Suporte a **playlists e vídeos únicos**
+- ✅ Histórico de downloads com busca e filtros
+- ✅ Interface moderna e responsiva
+- ✅ Atualização automática do `yt-dlp`
+- ✅ Notificações de sistema ao concluir downloads
+- ✅ Configurações personalizáveis (pasta, qualidade)
+- ✅ Totalmente offline e sem anúncios
+
+---
+
+## 🚀 Tecnologias Utilizadas
+
+| Tecnologia | Função |
+|----------|--------|
+| **Flutter** | Framework multiplataforma |
+| **yt-dlp** | Ferramenta de download (atualizada automaticamente) |
+
+---
+
+## 📦 Instalação
+
+### Pré-requisitos
+
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (versão 3.16+)
+
+### Passo a Passo
+
+1. Clone o repositório e rode com flutter:
+   ```bash
+    git clone https://github.com/iagolbdc/YTDL-Gui.git
+    cd YTDL-Gui
+    flutter pub get
+    flutter run
+   ```
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas!\
+Abra uma [issue](https://github.com/iagolbdc/YTDL-Gui/issues) ou
+envie um pull request.
+
+### 📬 Contato
+Se você gostou do projeto, deixe uma ⭐ no GitHub!
+
+Para bugs, sugestões ou contribuições, abra uma Issue ou Pull Request.
+
+Desenvolvido com ❤️ para você.
