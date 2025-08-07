@@ -6,7 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:youtube_downloader/main.dart';
+import 'package:ytdl_gui/main.dart';
 
 // Services
 import '../../core/services/binary_service.dart';

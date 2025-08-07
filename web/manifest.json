@@ -1,6 +1,6 @@
 {
-    "name": "youtube_downloader",
-    "short_name": "youtube_downloader",
+    "name": "ytdl_gui",
+    "short_name": "ytdl_gui",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
