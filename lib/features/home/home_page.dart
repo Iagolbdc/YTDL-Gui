@@ -1,4 +1,3 @@
-// lib/features/home/home_page.dart
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -8,15 +7,12 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ytdl_gui/main.dart';
 
-// Services
 import '../../core/services/binary_service.dart';
 import '../../core/services/download_history_service.dart';
 
-// Models
 import '../../shared/models/video_item.dart';
 import '../../shared/models/download_history_item.dart';
 
-// Widgets
 import '../../shared/widgets/custom_text_field.dart';
 import '../../shared/widgets/status_bar.dart';
 import '../history/history_page.dart';
@@ -24,7 +20,6 @@ import '../settings/settings_page.dart';
 import '../help/help_page.dart';
 import '../about/about_page.dart';
 
-// Widgets locais
 part 'widgets/video_list.dart';
 part 'widgets/download_controls.dart';
 
@@ -95,7 +90,6 @@ class _HomePageState extends State<HomePage> {
           savePath = savedPath;
         });
       } else {
-        // Pasta foi movida ou excluída
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -107,7 +101,6 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    // ✅ Carrega outras configurações
     final savedAudioQuality = prefs.getString('audio_quality');
     final savedVideoQuality = prefs.getString('video_quality');
 
@@ -192,9 +185,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildMainPage() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Altura mínima para a lista de vídeos
         final availableHeight = constraints.maxHeight;
-        final headerEstimate = 400.0; // Estimativa do que está acima da lista
+        final headerEstimate = 400.0;
         final listHeight = (availableHeight - headerEstimate).clamp(
           150.0,
           400.0,
@@ -216,8 +208,7 @@ class _HomePageState extends State<HomePage> {
               constraints: const BoxConstraints(maxWidth: 1200),
               child: IntrinsicHeight(
                 child: Column(
-                  mainAxisSize: MainAxisSize
-                      .min, // ✅ Evita que o Column tente preencher tudo
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildHeader(),
                     const SizedBox(height: 16),
@@ -269,7 +260,6 @@ class _HomePageState extends State<HomePage> {
                       progress: isDownloading ? progress : null,
                     ),
                     const SizedBox(height: 16),
-                    // Botões de download
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -300,7 +290,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20), // Espaço final
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -498,8 +488,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // === FUNÇÕES DE NEGÓCIO ===
-
   void clearList() {
     setState(() {
       videos.clear();
@@ -609,7 +597,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _showNotification(String title, String body) async {
-    if (!showNotifications) return; // Respeita a configuração do usuário
+    if (!showNotifications) return;
 
     const NotificationDetails notificationDetails = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -775,13 +763,11 @@ class _HomePageState extends State<HomePage> {
           status = "✅ ${video.title} concluído";
         });
 
-        // ✅ Notificação condicional
         if (showNotifications) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text("✅ ${video.title} baixado!")));
 
-          // ✅ Adicione a notificação do sistema
           _showNotification("Download Concluído", "${video.title}.");
         }
       } else {
@@ -790,7 +776,6 @@ class _HomePageState extends State<HomePage> {
           status = "⚠️ Falha: ${video.title}";
         });
 
-        // ✅ Notificação de erro (opcional)
         if (showNotifications) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("❌ Falha ao baixar: ${video.title}")),
@@ -810,7 +795,6 @@ class _HomePageState extends State<HomePage> {
       progress = 1.0;
     });
 
-    // ✅ Notificação final condicional
     if (showNotifications) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ $totalVideos arquivos baixados!")),
@@ -822,7 +806,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    loadRecentDownloads(); // Atualiza os recentes
+    loadRecentDownloads();
   }
 
   @override

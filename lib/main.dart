@@ -12,13 +12,11 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Configurações específicas para cada plataforma
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
   const DarwinInitializationSettings darwinSettings =
       DarwinInitializationSettings();
 
-  // ✅ Configuração para Linux
   const LinuxInitializationSettings linuxSettings = LinuxInitializationSettings(
     defaultActionName: 'Abrir',
   );
@@ -27,7 +25,7 @@ void main() async {
     android: androidSettings,
     iOS: darwinSettings,
     macOS: darwinSettings,
-    linux: linuxSettings, // ✅ Adicionado
+    linux: linuxSettings,
   );
   await flutterLocalNotificationsPlugin.initialize(settings);
 

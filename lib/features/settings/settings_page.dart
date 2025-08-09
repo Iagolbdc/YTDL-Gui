@@ -1,4 +1,3 @@
-// lib/features/settings/settings_page.dart
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +31,6 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      // Carrega valores salvos ou usa padrão
       audioQuality = prefs.getString('audio_quality') ?? "Alta (320kbps)";
       videoQuality = prefs.getString('video_quality') ?? "720p";
       savePath = prefs.getString('save_path');
@@ -41,11 +39,9 @@ class _SettingsPageState extends State<SettingsPage> {
       useFastDownload = prefs.getBool('use_fast_download') ?? false;
     });
 
-    // Notifica a Home com os valores carregados
     widget.onSettingsChanged(audioQuality, videoQuality, savePath);
   }
 
-  // Salva no SharedPreferences e notifica a Home
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('audio_quality', audioQuality);
@@ -57,7 +53,6 @@ class _SettingsPageState extends State<SettingsPage> {
     await prefs.setBool('show_notifications', showNotifications);
     await prefs.setBool('use_fast_download', useFastDownload);
 
-    // Notifica a tela principal
     widget.onSettingsChanged(audioQuality, videoQuality, savePath);
   }
 
@@ -100,7 +95,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _resetSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Remove tudo
+    await prefs.clear();
 
     setState(() {
       audioQuality = "Alta (320kbps)";
@@ -111,7 +106,6 @@ class _SettingsPageState extends State<SettingsPage> {
       useFastDownload = false;
     });
 
-    // Notifica a Home com os valores padrão
     widget.onSettingsChanged(audioQuality, videoQuality, savePath);
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +120,6 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // === Seção: Qualidade de Áudio ===
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -176,7 +169,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 16),
 
-          // === Seção: Qualidade de Vídeo ===
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -227,7 +219,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 16),
 
-          // === Seção: Pasta de Downloads ===
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -278,7 +269,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 16),
 
-          // === Seção: Atualizações ===
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -310,7 +300,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 16),
 
-          // === Seção: Experiência do Usuário ===
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -355,7 +344,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 20),
 
-          // === Botão: Resetar Configurações ===
           Center(
             child: TextButton.icon(
               onPressed: () {

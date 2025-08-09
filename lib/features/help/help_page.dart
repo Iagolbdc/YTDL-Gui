@@ -12,7 +12,6 @@ class HelpPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabeçalho
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -66,8 +65,6 @@ class HelpPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Como Usar
             _buildSection(
               context,
               icon: Icons.play_circle_outline,
@@ -84,8 +81,6 @@ class HelpPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 16),
-
-            // Dicas
             _buildSection(
               context,
               icon: Icons.lightbulb_outline,
@@ -106,7 +101,6 @@ class HelpPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Problemas Comuns
             _buildSection(
               context,
               icon: Icons.warning_amber,
@@ -137,7 +131,6 @@ class HelpPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Segurança
             _buildSection(
               context,
               icon: Icons.security,
@@ -165,7 +158,6 @@ class HelpPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Suporte
             _buildSection(
               context,
               icon: Icons.support,
@@ -178,7 +170,6 @@ class HelpPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // Aqui você pode abrir um link, e-mail ou formulário
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Funcionalidade de contato em breve!"),

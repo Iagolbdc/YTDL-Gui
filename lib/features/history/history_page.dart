@@ -1,4 +1,3 @@
-// lib/features/history/history_page.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -16,7 +15,7 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   List<DownloadHistoryItem> history = [];
   List<DownloadHistoryItem> filteredHistory = [];
-  String filter = 'todos'; // 'todos', 'mp3', 'mp4'
+  String filter = 'todos';
   String searchQuery = '';
   bool isLoading = true;
 
@@ -111,7 +110,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
     if (await parentDir.exists()) {
       if (await file.exists()) {
-        // ✅ Arquivo existe: abre selecionando
         if (Platform.isWindows) {
           await Process.start("explorer", ["/select,", path]);
         } else if (Platform.isLinux) {
@@ -120,7 +118,6 @@ class _HistoryPageState extends State<HistoryPage> {
           await Process.start("open", ["-R", path]);
         }
       } else {
-        // ❌ Arquivo não existe, mas pasta sim
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Arquivo foi movido ou excluído."),
@@ -129,7 +126,6 @@ class _HistoryPageState extends State<HistoryPage> {
         );
       }
     } else {
-      // ❌ Pasta não existe
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Pasta de destino não encontrada."),
@@ -176,12 +172,10 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: Column(
         children: [
-          // Barra de busca e filtros
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
-                // Campo de busca
                 TextField(
                   decoration: const InputDecoration(
                     hintText: "Buscar por título...",
@@ -198,7 +192,6 @@ class _HistoryPageState extends State<HistoryPage> {
                   },
                 ),
                 const SizedBox(height: 8),
-                // Filtros
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -250,7 +243,6 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
 
-          // Lista de downloads
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -278,7 +270,6 @@ class _HistoryPageState extends State<HistoryPage> {
                             padding: const EdgeInsets.all(12),
                             child: Row(
                               children: [
-                                // Ícone
                                 Container(
                                   width: 50,
                                   height: 50,
@@ -299,7 +290,6 @@ class _HistoryPageState extends State<HistoryPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                // Informações
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -347,7 +337,6 @@ class _HistoryPageState extends State<HistoryPage> {
                                     ],
                                   ),
                                 ),
-                                // Ações
                                 PopupMenuButton(
                                   icon: const Icon(Icons.more_vert, size: 18),
                                   itemBuilder: (context) => [

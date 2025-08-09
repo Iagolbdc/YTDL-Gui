@@ -11,9 +11,8 @@ class BinaryService {
     binaryFile = File(path);
   }
 
-  // ✅ Agora é Future<String> — resolve o diretório de forma assíncrona
   Future<String> _getBinaryPath() async {
-    final dir = await getApplicationSupportDirectory(); // ✅ Assíncrono
+    final dir = await getApplicationSupportDirectory();
     final binName = Platform.isWindows ? "yt-dlp.exe" : "yt-dlp";
     return "${dir.path}/$binName";
   }
@@ -25,9 +24,7 @@ class BinaryService {
       if (result.exitCode == 0) {
         return result.stdout.toString().trim();
       }
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
     return null;
   }
 
@@ -49,7 +46,7 @@ class BinaryService {
         }
       }
     } catch (e) {
-      print("Erro ao buscar release: $e"); // Para depuração
+      print("Erro ao buscar release: $e");
     }
     return null;
   }

@@ -1,7 +1,7 @@
 class DownloadHistoryItem {
   final String title;
   final String url;
-  final String type; // "MP3" ou "MP4"
+  final String type;
   final DateTime date;
   final String filePath;
 
