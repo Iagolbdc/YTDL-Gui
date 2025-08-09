@@ -60,3 +60,7 @@ Se você gostou do projeto, deixe uma ⭐ no GitHub!
 Para bugs, sugestões ou contribuições, abra uma Issue ou Pull Request.
 
 Desenvolvido com ❤️ para você.
+
+## Licença
+
+Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
