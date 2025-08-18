@@ -45,9 +45,7 @@ class BinaryService {
           return {"version": version, "url": asset["browser_download_url"]};
         }
       }
-    } catch (e) {
-      print("Erro ao buscar release: $e");
-    }
+    } catch (e) {}
     return null;
   }
 
@@ -64,7 +62,6 @@ class BinaryService {
       }
       return true;
     } catch (e) {
-      print("Erro ao baixar binário: $e");
       return false;
     }
   }

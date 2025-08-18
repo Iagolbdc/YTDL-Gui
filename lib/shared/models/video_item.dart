@@ -9,6 +9,9 @@ class VideoItem {
   bool downloaded;
   String? error;
 
+  double downloadProgress = 0.0;
+  DownloadStatus status = DownloadStatus.pending;
+
   VideoItem({
     required this.id,
     required this.title,
@@ -20,4 +23,12 @@ class VideoItem {
     this.downloaded = false,
     this.error,
   });
+}
+
+enum DownloadStatus {
+  pending, // Aguardando
+  downloading, // Em andamento
+  completed, // Concluído
+  failed, // Erro
+  cancelled, // Cancelado
 }

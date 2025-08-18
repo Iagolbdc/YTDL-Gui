@@ -31,7 +31,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
     final loadedHistory = jsonList.map((json) {
       final data = jsonDecode(json) as Map<String, dynamic>;
-      print("\n var historicoCompleto: $data");
       return DownloadHistoryItem(
         title: data['title'],
         url: data['url'],

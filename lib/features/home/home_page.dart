@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -9,10 +10,8 @@ import 'package:ytdl_gui/main.dart';
 
 import '../../core/services/binary_service.dart';
 import '../../core/services/download_history_service.dart';
-
 import '../../shared/models/video_item.dart';
 import '../../shared/models/download_history_item.dart';
-
 import '../../shared/widgets/custom_text_field.dart';
 import '../../shared/widgets/status_bar.dart';
 import '../history/history_page.dart';
@@ -50,6 +49,13 @@ class _HomePageState extends State<HomePage> {
 
   String audioQuality = "Alta (320kbps)";
   String videoQuality = "720p";
+
+  Process? currentProcess;
+  bool isCancelling = false;
+
+  Process? currentDownloadProcess;
+
+  int maxConcurrentDownloads = 5;
 
   int _currentIndex = 0;
 
@@ -146,6 +152,17 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() => status = "❌ Falha ao baixar yt-dlp");
       }
+    }
+  }
+
+  void cancelDownload() {
+    setState(() {
+      status = "Cancelando download...";
+      isDownloading = false;
+    });
+
+    if (currentDownloadProcess != null) {
+      currentDownloadProcess!.kill();
     }
   }
 
@@ -257,7 +274,9 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 10),
                     StatusBar(
                       status: status,
-                      progress: isDownloading ? progress : null,
+                      progress: isDownloading || isLoadingList
+                          ? progress
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -265,26 +284,42 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: isDownloading || !videos.isNotEmpty
+                            onPressed: isDownloading
+                                ? () => cancelDownload()
+                                : !videos.isNotEmpty
                                 ? null
                                 : () => startDownload(audioOnly: true),
-                            icon: const Icon(Icons.music_note),
-                            label: const Text("MP3"),
+                            icon: isDownloading
+                                ? const Icon(Icons.close)
+                                : const Icon(Icons.music_note),
+                            label: isDownloading
+                                ? const Text("Cancelar")
+                                : const Text("MP3"),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: isDownloading
+                                  ? Colors.red
+                                  : Colors.green,
                             ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: isDownloading || !videos.isNotEmpty
+                            onPressed: isDownloading
+                                ? () => cancelDownload()
+                                : !videos.isNotEmpty
                                 ? null
                                 : () => startDownload(audioOnly: false),
-                            icon: const Icon(Icons.movie),
-                            label: const Text("MP4"),
+                            icon: isDownloading
+                                ? const Icon(Icons.close)
+                                : const Icon(Icons.movie),
+                            label: isDownloading
+                                ? const Text("Cancelar")
+                                : const Text("MP4"),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
+                              backgroundColor: isDownloading
+                                  ? Colors.red
+                                  : Colors.blue,
                             ),
                           ),
                         ),
@@ -384,11 +419,17 @@ class _HomePageState extends State<HomePage> {
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: isLoadingList || isDownloading
+            onPressed: isLoadingList
+                ? () => cancelLoad()
+                : isDownloading
                 ? null
                 : () => loadVideosFromUrl(urlController.text),
-            icon: const Icon(Icons.playlist_add),
+            icon: isLoadingList
+                ? const Icon(Icons.close)
+                : const Icon(Icons.playlist_add),
             label: isLoadingList
+                ? const Text("Cancelar")
+                : isLoadingList
                 ? const SizedBox(
                     width: 16,
                     height: 16,
@@ -413,6 +454,17 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
+  }
+
+  void cancelLoad() {
+    setState(() {
+      isCancelling = true;
+      status = "Cancelando...";
+    });
+
+    if (currentProcess != null) {
+      currentProcess!.kill();
+    }
   }
 
   Widget _buildRecentDownloads() {
@@ -496,110 +548,188 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadVideosFromUrl(String url) async {
-    if (url.isEmpty || !url.contains("youtube.com")) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("URL inválida. Insira uma URL do YouTube."),
-        ),
-      );
-      return;
-    }
-
-    if (binaryService.binaryFile == null ||
-        !await binaryService.binaryFile!.exists()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Binário yt-dlp não encontrado. Tente novamente."),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoadingList = true;
-      videos.clear();
-      status = "Carregando vídeos...";
-    });
+    if (url.isEmpty) return;
 
     try {
-      final process = await Process.run(binaryService.binaryFile!.path, [
+      setState(() {
+        status = "🔍 Carregando detalhes...";
+        isLoadingList = true;
+        isCancelling = false;
+        progress = 0.0;
+        videos.clear();
+      });
+
+      currentProcess = await Process.start(binaryService.binaryFile!.path, [
         "--flat-playlist",
         "-J",
         url,
       ]);
 
-      if (process.exitCode != 0) {
+      List<VideoItem> newVideos = [];
+
+      final lines = <String>[];
+      currentProcess!.stdout
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen((line) {
+            lines.add(line);
+          });
+
+      String errorOutput = '';
+      currentProcess!.stderr
+          .transform(utf8.decoder)
+          .listen((line) => errorOutput += line);
+
+      final exitCode = await currentProcess!.exitCode;
+
+      if (isCancelling) {
+        if (mounted) {
+          setState(() {
+            status = "❌ Carregamento cancelado.";
+            isLoadingList = false;
+            progress = 0.0;
+          });
+        }
+        return;
+      }
+
+      if (exitCode != 0 || lines.isEmpty) {
+        final errorMsg = errorOutput.isNotEmpty
+            ? errorOutput
+            : 'Processo falhou';
         setState(() {
-          status = "❌ Erro: ${process.stderr.toString().substring(0, 60)}...";
+          status =
+              "❌ Erro: ${errorMsg.length > 60 ? '${errorMsg.substring(0, 60)}...' : errorMsg}";
           isLoadingList = false;
+          progress = 0.0;
         });
         return;
       }
 
-      final data = jsonDecode(process.stdout);
-      List<VideoItem> newVideos = [];
+      final data = jsonDecode(lines.join('\n'));
+      if (data is Map<String, dynamic>) {
+        if (data.containsKey("entries")) {
+          final entries =
+              (data["entries"] as List?)
+                  ?.whereType<Map<String, dynamic>>()
+                  .where((entry) {
+                    final title =
+                        entry["title"]?.toString().toLowerCase() ?? "";
+                    return !title.contains("deleted video") &&
+                        !title.contains("private video") &&
+                        title != "private" &&
+                        title != "deleted";
+                  })
+                  .toList() ??
+              [];
 
-      if (data is Map && data.containsKey("entries")) {
-        final entries = (data["entries"] as List).cast<Map<String, dynamic>>();
-        newVideos = entries
-            .map(
-              (e) => VideoItem(
-                id: e["id"] ?? "",
-                title: e["title"] ?? "Sem título",
-                url: e["url"] ?? "https://youtube.com/watch?v=${e["id"]}",
-              ),
-            )
-            .toList();
-      } else {
-        newVideos = [
-          VideoItem(
-            id: data["id"] ?? "",
-            title: data["title"] ?? "Sem título",
-            url:
-                data["webpage_url"] ??
-                "https://youtube.com/watch?v=${data["id"]}",
-          ),
-        ];
+          final total = entries.length;
+          for (int i = 0; i < entries.length; i++) {
+            if (!isLoadingList) break;
+
+            final item = entries[i];
+            newVideos.add(_mapEntryToVideoItem(item));
+
+            if (mounted) {
+              setState(() {
+                status = "🔍 Carregando: ${i + 1}/$total";
+                progress = (i + 1) / total;
+              });
+            }
+          }
+        } else {
+          final title = (data["title"]?.toString().toLowerCase() ?? "");
+          if (!title.contains("deleted") && !title.contains("private")) {
+            newVideos = [_mapEntryToVideoItem(data)];
+            if (mounted) {
+              setState(() {
+                status = "✅ 1 vídeo carregado";
+                progress = 1.0;
+              });
+            }
+          }
+        }
       }
 
-      setState(() {
-        videos = newVideos;
-        status = "✅ ${videos.length} vídeo(s). Buscando detalhes...";
-      });
-
-      final chunks = _chunkList(videos, 5);
-      for (final chunk in chunks) {
-        await Future.wait(chunk.map((v) => fetchDetails(v)));
+      for (final v in newVideos) {
+        if (v.thumbnail.isNotEmpty) {
+          _thumbnailCache[v.id] = v.thumbnail;
+        }
       }
 
-      setState(() {
-        status = "✅ Pronto para baixar (${videos.length} vídeos)";
-        isLoadingList = false;
-        selectAll = true;
-      });
+      if (mounted) {
+        setState(() {
+          videos = newVideos;
+          selectAll = true;
+          status = "✅ ${newVideos.length} vídeo(s) carregado(s)";
+          isLoadingList = false;
+          progress = 1.0;
+        });
+      }
     } catch (e) {
-      setState(() {
-        status = "Erro ao carregar: $e";
-        isLoadingList = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Erro: $e")));
+      if (isCancelling) {
+        setState(() {
+          status = "❌ Carregamento cancelado.";
+          isLoadingList = false;
+          progress = 0.0;
+        });
+      } else {
+        setState(() {
+          status = "Erro: $e";
+          isLoadingList = false;
+          progress = 0.0;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro: $e")));
+      }
+    } finally {
+      currentProcess = null;
     }
   }
 
-  List<List<T>> _chunkList<T>(List<T> list, int chunkSize) {
-    final chunks = <List<T>>[];
-    for (var i = 0; i < list.length; i += chunkSize) {
-      chunks.add(list.sublist(i, (i + chunkSize).clamp(0, list.length)));
+  VideoItem _mapEntryToVideoItem(Map<String, dynamic> data) {
+    final id = data["id"]?.toString() ?? "";
+    final title = data["title"]?.toString() ?? "Sem título";
+    final webpageUrl =
+        data["webpage_url"]?.toString() ?? "https://youtube.com/watch?v=$id";
+
+    String thumbnail = "";
+    if (id.isNotEmpty) {
+      thumbnail = "https://img.youtube.com/vi/$id/maxresdefault.jpg";
+      if (!_thumbnailCache.containsKey(id)) {
+        _thumbnailCache[id] = thumbnail;
+      }
     }
-    return chunks;
+
+    final duration = _formatDuration(data["duration"] ?? 0);
+
+    return VideoItem(
+      id: id,
+      title: title,
+      url: webpageUrl,
+      thumbnail: thumbnail,
+      duration: duration,
+      selected: true,
+      downloaded: false,
+      error: null,
+      isLoadingDetails: false,
+    );
+  }
+
+  String _formatDuration(dynamic seconds) {
+    if (seconds == null || seconds <= 0) return "--:--";
+    final dur = Duration(seconds: (seconds as num).toInt());
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    final mins = dur.inMinutes;
+    final secs = dur.inSeconds.remainder(60);
+    return "${twoDigits(mins)}:${twoDigits(secs)}";
   }
 
   Future<void> _showNotification(String title, String body) async {
     if (!showNotifications) return;
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    const notificationDetails = NotificationDetails(
       android: AndroidNotificationDetails(
         'channel_downloads',
         'Downloads',
@@ -616,55 +746,6 @@ class _HomePageState extends State<HomePage> {
       body,
       notificationDetails,
     );
-  }
-
-  Future<void> fetchDetails(VideoItem video) async {
-    if (_thumbnailCache.containsKey(video.id)) {
-      setState(() {
-        video.thumbnail = _thumbnailCache[video.id]!;
-        video.isLoadingDetails = false;
-      });
-      return;
-    }
-
-    setState(() => video.isLoadingDetails = true);
-    try {
-      final process = await Process.run(binaryService.binaryFile!.path, [
-        "--no-playlist",
-        "-J",
-        video.url,
-      ]);
-
-      if (process.exitCode == 0) {
-        final data = jsonDecode(process.stdout);
-        final thumb = data["thumbnail"] ?? "";
-        final duration = _formatDuration(data["duration"]);
-        _thumbnailCache[video.id] = thumb;
-
-        if (mounted) {
-          setState(() {
-            video.thumbnail = thumb;
-            video.duration = duration;
-            video.isLoadingDetails = false;
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          video.isLoadingDetails = false;
-        });
-      }
-    }
-  }
-
-  String _formatDuration(dynamic seconds) {
-    if (seconds == null || seconds <= 0) return "--:--";
-    final dur = Duration(seconds: seconds as int);
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    final mins = dur.inMinutes;
-    final secs = dur.inSeconds.remainder(60);
-    return "${twoDigits(mins)}:${twoDigits(secs)}";
   }
 
   Future<void> startDownload({required bool audioOnly}) async {
@@ -692,7 +773,12 @@ class _HomePageState extends State<HomePage> {
     final totalVideos = selectedVideos.length;
     var completed = 0;
 
-    for (final video in selectedVideos) {
+    final pending = Queue<VideoItem>.from(selectedVideos);
+    final activeProcesses = <Process>[];
+
+    Future<void> downloadVideo(VideoItem video) async {
+      if (!isDownloading) return;
+
       final args = <String>[
         video.url,
         "-o",
@@ -720,8 +806,9 @@ class _HomePageState extends State<HomePage> {
         args.insertAll(1, ["-f", format]);
       }
 
-      setState(() => status = "Baixando: ${video.title}");
       final process = await Process.start(binaryService.binaryFile!.path, args);
+      activeProcesses.add(process);
+
       var lastPercent = 0.0;
 
       process.stdout
@@ -731,6 +818,15 @@ class _HomePageState extends State<HomePage> {
             final match = RegExp(r"(\d+\.\d+)%").firstMatch(line);
             if (match != null) {
               final percent = double.tryParse(match.group(1)!) ?? 0.0;
+              final progressValue = percent / 100.0;
+
+              if (mounted) {
+                setState(() {
+                  video.downloadProgress = progressValue;
+                  video.status = DownloadStatus.downloading;
+                });
+              }
+
               if ((percent - lastPercent).abs() > 0.5) {
                 lastPercent = percent;
                 setState(() {
@@ -741,7 +837,9 @@ class _HomePageState extends State<HomePage> {
           });
 
       final exitCode = await process.exitCode;
-      completed++;
+      activeProcesses.remove(process);
+
+      if (!isDownloading) return;
 
       if (exitCode == 0) {
         final filePath =
@@ -758,52 +856,68 @@ class _HomePageState extends State<HomePage> {
           ),
         );
 
-        setState(() {
-          video.downloaded = true;
-          status = "✅ ${video.title} concluído";
-        });
+        if (mounted) {
+          setState(() {
+            status = "✅ ${video.title} concluído";
+            video.downloaded = true;
+            video.status = DownloadStatus.completed;
+            video.downloadProgress = 1.0;
+          });
+        }
 
         if (showNotifications) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("✅ ${video.title} baixado!")));
-
           _showNotification("Download Concluído", "${video.title}.");
         }
       } else {
-        setState(() {
-          video.error = "Erro $exitCode";
-          status = "⚠️ Falha: ${video.title}";
-        });
+        if (mounted) {
+          setState(() {
+            video.error = "Erro $exitCode";
+            status = "⚠️ Falha: ${video.title}";
+            video.status = isDownloading
+                ? DownloadStatus.failed
+                : DownloadStatus.cancelled;
+          });
+        }
 
         if (showNotifications) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("❌ Falha ao baixar: ${video.title}")),
-          );
-
           _showNotification(
             "Falha no Download",
             "Não foi possível baixar: ${video.title}",
           );
         }
       }
+
+      completed++;
     }
 
-    setState(() {
-      status = "✅ Todos os downloads concluídos!";
-      isDownloading = false;
-      progress = 1.0;
-    });
+    final workers = <Future>[];
+    for (int i = 0; i < maxConcurrentDownloads; i++) {
+      workers.add(
+        Future.doWhile(() async {
+          if (!isDownloading || pending.isEmpty) return false;
 
-    if (showNotifications) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ $totalVideos arquivos baixados!")),
+          final video = pending.removeFirst();
+          await downloadVideo(video);
+          return true;
+        }),
       );
+    }
 
-      _showNotification(
-        "Todos os Downloads Concluídos!",
-        "$totalVideos arquivos foram baixados com sucesso.",
-      );
+    await Future.wait(workers);
+
+    if (mounted && isDownloading) {
+      setState(() {
+        status = "✅ Todos os downloads concluídos!";
+        isDownloading = false;
+        progress = 1.0;
+      });
+
+      if (showNotifications) {
+        _showNotification(
+          "Todos os Downloads Concluídos!",
+          "$totalVideos arquivos foram baixados com sucesso.",
+        );
+      }
     }
 
     loadRecentDownloads();
